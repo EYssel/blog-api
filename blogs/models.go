@@ -2,10 +2,12 @@ package blogs
 
 import (
 	"errors"
+
+	"github.com/google/uuid"
 )
 
 type Blog struct {
-	ID       string    `json:"id"`
+	ID       uuid.UUID `json:"id"`
 	Title    string    `json:"title"`
 	Author   string    `json:"author"`
 	Likes    int       `json:"likes"`
@@ -22,45 +24,45 @@ var (
 )
 
 type MemStore struct {
-	list map[string]Blog
+	list map[uuid.UUID]Blog
 }
 
 func NewMemStore() *MemStore {
-	list := make(map[string]Blog)
+	list := make(map[uuid.UUID]Blog)
 	return &MemStore{
 		list,
 	}
 }
 
-func (m MemStore) Add(title string, blog Blog) error {
-	m.list[title] = blog
+func (m MemStore) Add(id uuid.UUID, blog Blog) error {
+	m.list[id] = blog
 	return nil
 }
 
-func (m MemStore) Get(title string) (Blog, error) {
+func (m MemStore) Get(id uuid.UUID) (Blog, error) {
 
-	if val, ok := m.list[title]; ok {
+	if val, ok := m.list[id]; ok {
 		return val, nil
 	}
 
 	return Blog{}, NotFoundErr
 }
 
-func (m MemStore) List() (map[string]Blog, error) {
+func (m MemStore) List() (map[uuid.UUID]Blog, error) {
 	return m.list, nil
 }
 
-func (m MemStore) Update(title string, blog Blog) error {
+func (m MemStore) Update(id uuid.UUID, blog Blog) error {
 
-	if _, ok := m.list[title]; ok {
-		m.list[title] = blog
+	if _, ok := m.list[id]; ok {
+		m.list[id] = blog
 		return nil
 	}
 
 	return NotFoundErr
 }
 
-func (m MemStore) Remove(title string) error {
-	delete(m.list, title)
+func (m MemStore) Remove(id uuid.UUID) error {
+	delete(m.list, id)
 	return nil
 }

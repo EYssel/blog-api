@@ -6,10 +6,11 @@ package main
 import (
 	"blog-app/blogs"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"regexp"
 
-	"github.com/gosimple/slug"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -18,18 +19,18 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/", &HomeHandler{})
+	//mux.Handle("/", &HomeHandler{})
 	mux.Handle("/blogs", blogsHandler)
 	mux.Handle("/blog", blogsHandler)
 
 	http.ListenAndServe(":8080", mux)
 }
 
-type HomeHandler struct{}
+// type HomeHandler struct{}
 
-func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World from Go :D"))
-}
+// func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// 	w.Write([]byte("Hello World from Go :D"))
+// }
 
 type BlogsHandler struct {
 	store blogStore
@@ -42,7 +43,10 @@ func (h *BlogsHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resourceID := slug.Make(blog.Title)
+	resourceID := uuid.New()
+
+	fmt.Println(`Test Create Blog: `)
+	fmt.Println(resourceID)
 
 	if err := h.store.Add(resourceID, blog); err != nil {
 		InternalServerErrorHandler(w, r)
@@ -52,7 +56,24 @@ func (h *BlogsHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *BlogsHandler) ListBlogs(w http.ResponseWriter, r *http.Request)  {}
+func (h *BlogsHandler) ListBlogs(w http.ResponseWriter, r *http.Request) {
+	blogs, err := h.store.List()
+
+	if err != nil {
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(blogs)
+
+	if err != nil {
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
+}
 func (h *BlogsHandler) GetBlog(w http.ResponseWriter, r *http.Request)    {}
 func (h *BlogsHandler) UpdateBlog(w http.ResponseWriter, r *http.Request) {}
 func (h *BlogsHandler) DeleteBlog(w http.ResponseWriter, r *http.Request) {}
@@ -91,11 +112,11 @@ func NewBlogsHandler(s blogStore) *BlogsHandler {
 }
 
 type blogStore interface {
-	Add(name string, blog blogs.Blog) error
-	Get(name string) (blogs.Blog, error)
-	Update(name string, blog blogs.Blog) error
-	List() (map[string]blogs.Blog, error)
-	Remove(name string) error
+	Add(id uuid.UUID, blog blogs.Blog) error
+	Get(id uuid.UUID) (blogs.Blog, error)
+	Update(id uuid.UUID, blog blogs.Blog) error
+	List() (map[uuid.UUID]blogs.Blog, error)
+	Remove(id uuid.UUID) error
 }
 
 func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request) {
