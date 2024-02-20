@@ -34,7 +34,10 @@ func NewMemStore() *MemStore {
 	}
 }
 
-func (m MemStore) Add(id uuid.UUID, blog Blog) error {
+func (m MemStore) Add(blog Blog) error {
+	id := uuid.New()
+	blog.ID = id
+
 	m.list[id] = blog
 	return nil
 }
@@ -48,8 +51,15 @@ func (m MemStore) Get(id uuid.UUID) (Blog, error) {
 	return Blog{}, NotFoundErr
 }
 
-func (m MemStore) List() (map[uuid.UUID]Blog, error) {
-	return m.list, nil
+func (m MemStore) List() ([]Blog, error) {
+
+	var blogs []Blog
+
+	for _, item := range m.list {
+		blogs = append(blogs, item)
+	}
+
+	return blogs, nil
 }
 
 func (m MemStore) Update(id uuid.UUID, blog Blog) error {

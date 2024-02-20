@@ -38,17 +38,13 @@ type BlogsHandler struct {
 
 func (h *BlogsHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 	var blog blogs.Blog
+
 	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
 		InternalServerErrorHandler(w, r)
 		return
 	}
 
-	resourceID := uuid.New()
-
-	fmt.Println(`Test Create Blog: `)
-	fmt.Println(resourceID)
-
-	if err := h.store.Add(resourceID, blog); err != nil {
+	if err := h.store.Add(blog); err != nil {
 		InternalServerErrorHandler(w, r)
 		return
 	}
@@ -58,6 +54,8 @@ func (h *BlogsHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 
 func (h *BlogsHandler) ListBlogs(w http.ResponseWriter, r *http.Request) {
 	blogs, err := h.store.List()
+
+	fmt.Print(blogs)
 
 	if err != nil {
 		InternalServerErrorHandler(w, r)
@@ -112,10 +110,10 @@ func NewBlogsHandler(s blogStore) *BlogsHandler {
 }
 
 type blogStore interface {
-	Add(id uuid.UUID, blog blogs.Blog) error
+	Add(blog blogs.Blog) error
 	Get(id uuid.UUID) (blogs.Blog, error)
 	Update(id uuid.UUID, blog blogs.Blog) error
-	List() (map[uuid.UUID]blogs.Blog, error)
+	List() ([]blogs.Blog, error)
 	Remove(id uuid.UUID) error
 }
 
