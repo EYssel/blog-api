@@ -72,13 +72,55 @@ func (h *BlogsHandler) ListBlogs(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
-func (h *BlogsHandler) GetBlog(w http.ResponseWriter, r *http.Request)    {}
+func (h *BlogsHandler) GetBlog(w http.ResponseWriter, r *http.Request) {
+	// Extract the resource ID/slug using a regex
+	matches := BlogReWithID.FindStringSubmatch(r.URL.Path)
+	// Expect matches to be length >= 2 (full string + 1 matching group)
+	if len(matches) < 2 {
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	id, err := uuid.Parse(matches[1])
+	fmt.Print("Getting Blog")
+	fmt.Print(id)
+
+	if err != nil {
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// Retrieve blog from the store
+	blog, err := h.store.Get(id)
+	if err != nil {
+		// Special case of NotFound Error
+		if err == blogs.NotFoundErr {
+			NotFoundHandler(w, r)
+			return
+		}
+
+		// Every other error
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// Convert the struct into JSON payload
+	jsonBytes, err := json.Marshal(blog)
+	if err != nil {
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// Write the results
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
+}
 func (h *BlogsHandler) UpdateBlog(w http.ResponseWriter, r *http.Request) {}
 func (h *BlogsHandler) DeleteBlog(w http.ResponseWriter, r *http.Request) {}
 
 var (
 	BlogRe       = regexp.MustCompile(`^/blogs/*$`)
-	BlogReWithID = regexp.MustCompile(`^/blogs/([a-z0-9]+(?:-[a-z0-9]+)+)$`)
+	BlogReWithID = regexp.MustCompile(`^/blogs/([a-z0-9])$`)
 )
 
 func (h *BlogsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +155,7 @@ type blogStore interface {
 	Add(blog blogs.Blog) error
 	Get(id uuid.UUID) (blogs.Blog, error)
 	Update(id uuid.UUID, blog blogs.Blog) error
-	List() ([]blogs.Blog, error)
+	List() (map[uuid.UUID]blogs.Blog, error)
 	Remove(id uuid.UUID) error
 }
 

@@ -51,15 +51,15 @@ func (m MemStore) Get(id uuid.UUID) (Blog, error) {
 	return Blog{}, NotFoundErr
 }
 
-func (m MemStore) List() ([]Blog, error) {
+func (m MemStore) List() (map[uuid.UUID]Blog, error) {
 
-	var blogs []Blog
+	// var blogs []Blog
 
-	for _, item := range m.list {
-		blogs = append(blogs, item)
-	}
+	// for _, item := range m.list {
+	// 	blogs = append(blogs, item)
+	// }
 
-	return blogs, nil
+	return m.list, nil
 }
 
 func (m MemStore) Update(id uuid.UUID, blog Blog) error {
